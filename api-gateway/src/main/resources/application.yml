@@ -1,0 +1,134 @@
+spring:
+  application:
+    name: API-GATEWAY
+  profiles:
+    active: dev
+  config:
+    import: optional:configserver:http://localhost:8889
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+
+          routes:
+
+            # Product Service
+            - id: product-service
+              uri: lb://PRODUCT-SERVICE
+              predicates:
+                - Path=/api/products/**
+
+            # Order Service
+            - id: order-service
+              uri: lb://ORDER-SERVICE
+              predicates:
+                - Path=/api/orders/**
+
+            # Auth Service
+            - id: auth-service
+              uri: lb://AUTH-SERVICE
+              predicates:
+                - Path=/api/auth/**
+
+            # Payment Service
+            - id: payment-service
+              uri: lb://PAYMENT-SERVICE
+              predicates:
+                - Path=/api/payments/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: paymentServiceCB
+                    fallbackUri: forward:/fallback/payments
+
+            ####################################################
+            # Swagger/OpenAPI Routes
+            ####################################################
+
+            - id: product-docs
+              uri: lb://PRODUCT-SERVICE
+              predicates:
+                - Path=/product/v3/api-docs
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: order-docs
+              uri: lb://ORDER-SERVICE
+              predicates:
+                - Path=/order/v3/api-docs
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: payment-docs
+              uri: lb://PAYMENT-SERVICE
+              predicates:
+                - Path=/payment/v3/api-docs
+              filters:
+                - SetPath=/v3/api-docs
+
+            - id: auth-docs
+              uri: lb://AUTH-SERVICE
+              predicates:
+                - Path=/auth/v3/api-docs
+              filters:
+                - SetPath=/v3/api-docs
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+  instance:
+    prefer-ip-address: true
+
+management:
+  tracing:
+    enabled: true # Enabling distributed tracing
+    sampling:
+      probability: 1.0 # All requests sent by Postman will be traced
+    propagation:
+      type: b3 # B3 propagation format used by Zipkin
+
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans # Zipkin endpoint
+
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, beans, prometheus
+
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.tnf.api_gateway: DEBUG
+    org.springframework.cloud.sleuth: DEBUG
+
+info:
+  app:
+    name: API GATEWAY
+    version: 1.0.0
+    description: Manages API Gateway
+
+springdoc:
+  swagger-ui:
+    urls:
+      - name: Product Service
+        url: /product/v3/api-docs
+
+      - name: Order Service
+        url: /order/v3/api-docs
+
+      - name: Payment Service
+        url: /payment/v3/api-docs
+
+      - name: Auth Service
+        url: /auth/v3/api-docs

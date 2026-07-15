@@ -1,0 +1,89 @@
+# ─────────────────────────────────────────────────────────────
+# tnf-microservices monorepo .gitignore
+# Maven + Spring Boot services inside an Eclipse/STS workspace
+# (each service also has its own .gitignore; this covers the root)
+# ─────────────────────────────────────────────────────────────
+
+# ---- Eclipse / STS workspace metadata (this folder is a workspace) ----
+.metadata/
+.recommenders/
+.apt_generated/
+.classpath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+.factorypath
+bin/
+**/bin/
+
+# ---- Maven build output ----
+target/
+**/target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+.mvn/wrapper/maven-wrapper.jar
+release.properties
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+dependency-reduced-pom.xml
+
+# ---- Gradle (in case any service uses it) ----
+.gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# ---- Logs ----
+logs/
+**/logs/
+*.log
+*.log.*
+
+# ---- Local / secret configuration (NEVER commit real credentials) ----
+.env
+*.env
+!.env.example
+application-local.properties
+application-local.yml
+application-local.yaml
+application-secret*.yml
+application-secret*.properties
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+
+# ---- IntelliJ IDEA ----
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# ---- VS Code ----
+.vscode/
+
+# ---- NetBeans ----
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# ---- Spring Initializr helper ----
+HELP.md
+
+# ---- OS files ----
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ---- Claude Code local settings ----
+.claude/settings.local.json
