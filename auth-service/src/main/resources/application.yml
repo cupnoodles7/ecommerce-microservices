@@ -8,13 +8,12 @@ spring:
     active: dev
   data:
     mongodb:
-      uri: mongodb://localhost:27017/authdb
+      uri: ${MONGODB_URI:mongodb://localhost:27017/authdb}
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka
-
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
   instance:
     prefer-ip-address: true
 
@@ -28,16 +27,29 @@ management:
 
   zipkin:
     tracing:
-      endpoint: http://localhost:9411/api/v2/spans # Zipkin endpoint
+      endpoint: ${ZIPKIN_URL:http://localhost:9411/api/v2/spans} # Zipkin endpoint
 
   endpoints:
     web:
       exposure:
         include: health, info, metrics, beans, prometheus
+      base-path: /actuator
 
   endpoint:
     health:
       show-details: always
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+info:
+  app:
+    name: Auth Service
+    version: 1.0.0
+    description: Authentication Service
 
 logging:
   level:
@@ -46,5 +58,5 @@ logging:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET}
-  expiration: 86400000 # 24 hours in milliseconds
+  secret: ${JWT_SECRET:ThisIsMyTnfAuthServiceSecretKeyChangeMe12345}
+  expiration: ${JWT_EXPIRATION:86400000} # 24 hours in milliseconds

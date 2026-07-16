@@ -81,7 +81,7 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone:  ${EUREKA_URL:http://localhost:8761/eureka}
 
   instance:
     prefer-ip-address: true
@@ -96,16 +96,13 @@ management:
 
   zipkin:
     tracing:
-      endpoint: http://localhost:9411/api/v2/spans # Zipkin endpoint
+      endpoint: ${ZIPKIN_URL:http://localhost:9411/api/v2/spans}  # Zipkin endpoint
 
   endpoints:
     web:
       exposure:
         include: health, info, metrics, beans, prometheus
 
-  endpoint:
-    health:
-      show-details: always
 
 logging:
   level:
