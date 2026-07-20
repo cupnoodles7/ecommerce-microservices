@@ -1,28 +1,28 @@
-server:
-  port: 8082
-
-spring:
-  application:
-    name: ORDER-SERVICE
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/orderdb
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-
-logging:
-  level:
-    com.tnf.order_service: DEBUG
-
-management:
-  tracing:
-    enabled: true
-    sampling:
-      probability: 1.0 # Will trace all requests
-    propagation: # In which format data is being sent 
-      type: b3
-  zipkin:
-    tracing:
-      endpoint: http://localhost:9411/api/v2/spans
+# server:
+#   port: 8082
+#
+# spring:
+#   application:
+#     name: ORDER-SERVICE
+#   data:
+#     mongodb:
+#       uri: mongodb://localhost:27017/orderdb
+# eureka:
+#   client:
+#     service-url:
+#       defaultZone: http://localhost:8761/eureka/
+#
+# logging:
+#   level:
+#     com.tnf.order_service: DEBUG
+#
+# management:
+#   tracing:
+#     enabled: true
+#     sampling:
+#       probability: 1.0 # Will trace all requests
+#     propagation: # In which format data is being sent
+#       type: b3
+#   zipkin:
+#     tracing:
+#       endpoint: http://localhost:9411/api/v2/spans

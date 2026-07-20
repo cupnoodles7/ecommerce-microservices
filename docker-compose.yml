@@ -1,0 +1,134 @@
+services:
+
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - microservices-net
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - microservices-net
+
+  config-server:
+    build: ./config-server
+    container_name: config-server
+    ports:
+      - "8889:8889"
+    environment:
+      - GIT_REPO_URI=${GIT_REPO_URI}
+      - GIT_USERNAME=${GIT_USERNAME}
+      - GIT_PASSWORD=${GIT_PASSWORD}
+      - EUREKA_URL=http://eureka-server:8761/eureka/
+    networks:
+      - microservices-net
+
+  eureka-server:
+    build: ./eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    depends_on:
+      - config-server
+    networks:
+      - microservices-net
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "8085:8085"
+    depends_on:
+      - eureka-server
+      - config-server
+      - mongo
+    environment:
+      - CONFIG_SERVER_URL=http://config-server:8889
+      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - MONGODB_URI=mongodb://mongo:27017/authdb
+      - ZIPKIN_URL=http://zipkin:9411/api/v2/spans
+    networks:
+      - microservices-net
+
+  product-service:
+    build: ./product-service
+    container_name: product-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - eureka-server
+      - config-server
+      - mongo
+    environment:
+      - CONFIG_SERVER_URL=http://config-server:8889
+      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - MONGODB_URI=mongodb://mongo:27017/productdb
+      - ZIPKIN_URL=http://zipkin:9411/api/v2/spans
+    networks:
+      - microservices-net
+
+  payment-service:
+    build: ./payment-service
+    container_name: payment-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - eureka-server
+      - config-server
+      - mongo
+    environment:
+      - CONFIG_SERVER_URL=http://config-server:8889
+      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - MONGODB_URI=mongodb://mongo:27017/paymentdb
+      - ZIPKIN_URL=http://zipkin:9411/api/v2/spans
+    networks:
+      - microservices-net
+
+  order-service:
+    build: ./order-service
+    container_name: order-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - eureka-server
+      - config-server
+      - mongo
+      - product-service
+      - payment-service
+    environment:
+      - CONFIG_SERVER_URL=http://config-server:8889
+      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - MONGODB_URI=mongodb://mongo:27017/orderdb
+      - ZIPKIN_URL=http://zipkin:9411/api/v2/spans
+    networks:
+      - microservices-net
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8083:8083"
+    depends_on:
+      - eureka-server
+      - config-server
+    environment:
+      - CONFIG_SERVER_URL=http://config-server:8889
+      - EUREKA_URL=http://eureka-server:8761/eureka/
+      - ZIPKIN_URL=http://zipkin:9411/api/v2/spans
+    networks:
+      - microservices-net
+
+networks:
+  microservices-net:
+    driver: bridge
+
+volumes:
+  mongo-data:
