@@ -1,0 +1,262 @@
+{
+  "info": {
+    "name": "TNF Microservices",
+    "description": "Test collection for the TNF microservices stack. Requests go through the API Gateway (http://localhost:8083) by default. Change {{baseUrl}} to a service's own port to bypass the gateway (auth:8085, product:8081, payment:8084, order:8082).\n\nFlow: run Auth > Register, then Auth > Login (auto-saves {{jwt}}). Protected requests send Authorization: Bearer {{jwt}} via collection auth.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{jwt}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8083" },
+    { "key": "jwt", "value": "" },
+    { "key": "username", "value": "vijay" },
+    { "key": "email", "value": "vijay@example.com" },
+    { "key": "password", "value": "Password123!" },
+    { "key": "productId", "value": "" },
+    { "key": "orderId", "value": "" },
+    { "key": "paymentId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "register" ] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "description": "AuthRequest body: username, email, password."
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "if (json && json.token) {",
+                  "  pm.collectionVariables.set('jwt', json.token);",
+                  "  console.log('Saved JWT to {{jwt}}');",
+                  "} else {",
+                  "  console.log('No token field in login response');",
+                  "}",
+                  "pm.test('Login returns a token', function () {",
+                  "  pm.expect(json && json.token, 'token').to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "login" ] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usernameOrEmail\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "description": "LoginRequest body: usernameOrEmail (username OR email), password. Test script auto-saves the returned token into {{jwt}}."
+          }
+        },
+        {
+          "name": "Validate Token",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{jwt}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/auth/validate", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "validate" ] },
+            "description": "Reads the JWT from the Authorization header. No body."
+          }
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "X-Auth-Username", "value": "{{username}}", "description": "Normally injected by the gateway after JWT validation; set manually when calling directly." }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/me", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "me" ] },
+            "description": "Expects header X-Auth-Username (gateway usually injects this from the JWT)."
+          }
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "X-Auth-Roles", "value": "ROLE_ADMIN", "description": "Normally injected by the gateway; set manually when calling directly." }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/users", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "users" ] },
+            "description": "Expects header X-Auth-Roles."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{jwt}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "logout" ] },
+            "description": "No body."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product",
+      "item": [
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/api/products", "host": [ "{{baseUrl}}" ], "path": [ "api", "products" ] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sample Product\",\n  \"description\": \"A test product\",\n  \"price\": 199.99,\n  \"stockQuantity\": 50\n}"
+            },
+            "description": "Product body: name, description, price (number), stockQuantity (integer). id is generated."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json; try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "if (json && json.id) { pm.collectionVariables.set('productId', json.id); console.log('Saved productId'); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let arr; try { arr = pm.response.json(); } catch (e) { arr = null; }",
+                  "if (Array.isArray(arr) && arr.length && arr[0].id) { pm.collectionVariables.set('productId', arr[0].id); console.log('Saved first productId'); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/products", "host": [ "{{baseUrl}}" ], "path": [ "api", "products" ] }
+          }
+        },
+        {
+          "name": "Get Product By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/products/{{productId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "products", "{{productId}}" ] },
+            "description": "Uses {{productId}} captured by Create Product / Get All Products."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Order",
+      "item": [
+        {
+          "name": "Place Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json; try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "if (json && json.id) { pm.collectionVariables.set('orderId', json.id); console.log('Saved orderId'); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/api/orders", "host": [ "{{baseUrl}}" ], "path": [ "api", "orders" ] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"productName\": \"Sample Product\",\n  \"customerEmail\": \"{{email}}\",\n  \"quantity\": 2\n}"
+            },
+            "description": "Order body (key fields): productId, productName, customerEmail, quantity. The service typically fills price/totalPrice/status/paymentStatus and calls product & payment services. Set {{productId}} first (run a Product request)."
+          }
+        },
+        {
+          "name": "Get All Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/orders", "host": [ "{{baseUrl}}" ], "path": [ "api", "orders" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment",
+      "item": [
+        {
+          "name": "Process Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json; try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "if (json && json.id) { pm.collectionVariables.set('paymentId', json.id); console.log('Saved paymentId'); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments?orderId={{orderId}}&customerEmail={{email}}&amount=399.98",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "payments" ],
+              "query": [
+                { "key": "orderId", "value": "{{orderId}}" },
+                { "key": "customerEmail", "value": "{{email}}" },
+                { "key": "amount", "value": "399.98" }
+              ]
+            },
+            "description": "IMPORTANT: this endpoint takes QUERY PARAMS (@RequestParam), not a JSON body: orderId, customerEmail, amount."
+          }
+        },
+        {
+          "name": "Get Payment By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/payments/{{paymentId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "payments", "{{paymentId}}" ] },
+            "description": "Uses {{paymentId}} captured by Process Payment."
+          }
+        }
+      ]
+    }
+  ]
+}
